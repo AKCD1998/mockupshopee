@@ -1,0 +1,92 @@
+.pm-shop-avatar {
+  overflow: hidden;
+  position: relative;
+}
+
+.pm-shop-avatar.has-image {
+  background: #fff;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
+}
+
+.pm-shop-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+.pm-shop-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  line-height: 1;
+}
+
+.ae-shop-header-region {
+  border-radius: 12px;
+}
+
+.ae-shop-header-region .ae-region-trigger {
+  top: 10px;
+  right: 10px;
+}
+
+.ae-shop-header-editor {
+  width: min(560px, calc(100vw - 34px));
+}
+
+.ae-shop-header-editor-grid {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ae-shop-avatar-preview-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.ae-shop-avatar-preview {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto;
+}
+
+.ae-shop-avatar-input {
+  display: none;
+}
+
+.ae-shop-avatar-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.ae-shop-name-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.ae-shop-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.ae-shop-name-restore {
+  margin-right: 0;
+  justify-self: flex-start;
+}
+
+@media (max-width: 880px) {
+  .ae-shop-header-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ae-shop-avatar-preview {
+    margin: 0;
+  }
+}
