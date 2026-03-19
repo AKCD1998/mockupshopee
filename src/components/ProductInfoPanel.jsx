@@ -185,6 +185,7 @@ const ProductInfoPanel = ({
                     }`}
                     onClick={() => onVariantChange?.(variant.id)}
                     disabled={isDisabled}
+                    aria-pressed={isSelected}
                   >
                     {variant.label}
                   </button>
@@ -204,6 +205,7 @@ const ProductInfoPanel = ({
                   className="pm-qty-btn"
                   onClick={onDecreaseQuantity}
                   disabled={disablePurchaseActions || quantity <= 1}
+                  aria-label="ลดจำนวนสินค้า"
                 >
                   -
                 </button>
@@ -215,12 +217,14 @@ const ProductInfoPanel = ({
                   value={quantity}
                   onChange={(event) => onQuantityInputChange?.(Number(event.target.value))}
                   disabled={disablePurchaseActions}
+                  aria-label="จำนวนสินค้า"
                 />
                 <button
                   type="button"
                   className="pm-qty-btn"
                   onClick={onIncreaseQuantity}
                   disabled={disablePurchaseActions || quantity >= variantStock}
+                  aria-label="เพิ่มจำนวนสินค้า"
                 >
                   +
                 </button>

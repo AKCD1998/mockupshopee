@@ -1,24 +1,75 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  DEFAULT_EDITABLE_CONTENT_STORAGE_KEY,
+  EDITABLE_CONTENT_CHANGED_EVENT,
+  EDITABLE_CONTENT_STORAGE_KEY_PREFIX,
+  emitEditableContentChanged,
+  getEditableContentStorageKey,
+  getEditableContentStorageScope,
+  getLegacyEditableContentStorageKeys,
+  readEditableContentFromStorageKeys,
+} from "../utils/editableContentStorage";
 
-const readStoredContent = (storageKey) => {
-  try {
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) {
-      return {};
-    }
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch (error) {
-    return {};
+export {
+  EDITABLE_CONTENT_CHANGED_EVENT,
+  EDITABLE_CONTENT_STORAGE_KEY_PREFIX,
+  getEditableContentStorageKey,
+  getEditableContentStorageScope,
+  getLegacyEditableContentStorageKeys,
+} from "../utils/editableContentStorage";
+
+const toStorageKeyList = (storageKey, fallbackStorageKeys = []) => {
+  const nextKeys = [storageKey];
+  if (Array.isArray(fallbackStorageKeys)) {
+    nextKeys.push(...fallbackStorageKeys);
   }
+
+  return [...new Set(nextKeys.filter((key) => typeof key === "string" && key.trim()))];
 };
 
-const useEditableContent = (initialContent, storageKey = "pm_editable_content_v1") => {
-  const [overrides, setOverrides] = useState(() => readStoredContent(storageKey));
+const useEditableContent = (
+  initialContent,
+  storageKey = DEFAULT_EDITABLE_CONTENT_STORAGE_KEY,
+  fallbackStorageKeys = []
+) => {
+  const storageKeys = useMemo(
+    () => toStorageKeyList(storageKey, fallbackStorageKeys),
+    [fallbackStorageKeys, storageKey]
+  );
+  const [overrides, setOverrides] = useState(
+    () => readEditableContentFromStorageKeys(storageKeys).overrides
+  );
+
+  useEffect(() => {
+    const { overrides: nextOverrides, sourceKey } = readEditableContentFromStorageKeys(storageKeys);
+    setOverrides(nextOverrides);
+
+    if (!sourceKey || sourceKey === storageKey) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(nextOverrides));
+      storageKeys.forEach((key) => {
+        if (key !== storageKey) {
+          localStorage.removeItem(key);
+        }
+      });
+      emitEditableContentChanged({
+        storageKey,
+        sourceKey,
+      });
+    } catch (error) {
+      // no-op: localStorage may be unavailable in restricted environments
+    }
+  }, [storageKey, storageKeys]);
 
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(overrides));
+      emitEditableContentChanged({
+        storageKey,
+      });
     } catch (error) {
       // no-op: localStorage may be unavailable in restricted environments
     }
@@ -46,7 +97,15 @@ const useEditableContent = (initialContent, storageKey = "pm_editable_content_v1
 
   const resetEditableContent = useCallback(() => {
     setOverrides({});
-  }, []);
+    try {
+      storageKeys.forEach((key) => localStorage.removeItem(key));
+      emitEditableContentChanged({
+        storageKey,
+      });
+    } catch (error) {
+      // no-op: localStorage may be unavailable in restricted environments
+    }
+  }, [storageKey, storageKeys]);
 
   return {
     editableContent,

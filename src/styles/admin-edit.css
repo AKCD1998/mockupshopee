@@ -26,7 +26,7 @@
 }
 
 .ae-gate-panel {
-  width: 220px;
+  width: 252px;
   border: 1px solid #dfe4ea;
   background: rgba(255, 255, 255, 0.97);
   border-radius: 12px;
@@ -76,6 +76,17 @@
 
 .ae-gate-btn-ghost:hover {
   background: #eef2f6;
+}
+
+.ae-gate-btn-primary {
+  border-color: #ee4d2d;
+  background: #ee4d2d;
+  color: #fff;
+}
+
+.ae-gate-btn-primary:hover {
+  background: #dc4527;
+  border-color: #dc4527;
 }
 
 .ae-gate-btn-danger {
@@ -862,7 +873,7 @@
   }
 
   .ae-gate-panel {
-    width: 200px;
+    width: 240px;
   }
 
   .ae-gallery-modal,

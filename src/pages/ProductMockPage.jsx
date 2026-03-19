@@ -13,15 +13,24 @@ import AdminEditGate from "../components/admin/AdminEditGate";
 import AdminPasswordModal from "../components/admin/AdminPasswordModal";
 import EditableRegion from "../components/admin/EditableRegion";
 import GalleryEditorModal from "../components/admin/GalleryEditorModal";
-import mockProduct from "../data/mockProduct";
+import { getDefaultMockProduct, getProductBySlug } from "../data/mockProduct";
 import useAdminEdit from "../hooks/useAdminEdit";
 import useEditableContent from "../hooks/useEditableContent";
+import {
+  VARIANT_OVERRIDE_MODE_FULL_LIST,
+  buildEditableContentExport,
+} from "../utils/publishProduct";
+import { buildDisplayProductFromEditableContent } from "../utils/displayProduct";
+import {
+  getEditableContentStorageKey,
+  getLegacyEditableContentStorageKeys,
+} from "../utils/editableContentStorage";
+import { PRODUCT_ROUTE, matchProductRoute } from "../utils/appRoutes";
 import "../styles/product-mock.css";
 import "../styles/chubby-header.css";
 import "../styles/admin-edit.css";
 
 const FALLBACK_IMAGE = "https://picsum.photos/seed/mock-product-fallback/900/900";
-const VARIANT_OVERRIDE_MODE_FULL_LIST = "full-list-v1";
 
 const toComparableVariantRow = (variant, index = 0) => {
   const fallbackId = `variant-${index + 1}`;
@@ -120,8 +129,20 @@ const normalizeProduct = (rawProduct = {}) => {
       ? rawProduct.categoryPath.filter(Boolean)
       : ["หมวดหมู่สินค้า"];
 
+  const specRows =
+    Array.isArray(rawProduct.specRows) && rawProduct.specRows.length
+      ? rawProduct.specRows
+          .map((row, index) => ({
+            id: row?.id || `spec-row-${index + 1}`,
+            label: row?.label || `หัวข้อ ${index + 1}`,
+            value: row?.value || "-",
+          }))
+          .filter((row) => row.label && row.value)
+      : [];
+
   return {
     id: rawProduct.id || "mock-product",
+    slug: rawProduct.slug || "",
     name: rawProduct.name || "สินค้าตัวอย่างสำหรับการนำเสนอ",
     internalNotice: {
       badge: rawProduct.internalNotice?.badge || "Mockup สำหรับพิจารณาภายใน",
@@ -136,6 +157,7 @@ const normalizeProduct = (rawProduct = {}) => {
     images,
     shop: {
       name: rawProduct.shop?.name || "ร้านค้าตัวอย่าง",
+      avatarSrc: rawProduct.shop?.avatarSrc || "",
       onlineStatus: rawProduct.shop?.onlineStatus || "ออนไลน์ล่าสุดเมื่อไม่นานนี้",
       score: Number.isFinite(rawProduct.shop?.score) ? rawProduct.shop.score : 0,
       responseRate: rawProduct.shop?.responseRate || "-",
@@ -153,12 +175,14 @@ const normalizeProduct = (rawProduct = {}) => {
       licenseNumber: rawProduct.specs?.licenseNumber || "-",
       shipFrom: rawProduct.specs?.shipFrom || "-",
     },
+    specRows,
     description: rawProduct.description || {
       intro: "รายละเอียดสินค้าอยู่ระหว่างเตรียมข้อมูล",
       highlights: [],
       inBox: [],
       notes: [],
     },
+    descriptionHtml: rawProduct.descriptionHtml || "",
     trustIndicators:
       Array.isArray(rawProduct.trustIndicators) && rawProduct.trustIndicators.length
         ? rawProduct.trustIndicators
@@ -202,6 +226,7 @@ const normalizeProduct = (rawProduct = {}) => {
     sameShopItems: Array.isArray(rawProduct.sameShopItems)
       ? rawProduct.sameShopItems.map((item, index) => ({
           id: item?.id || `shop-item-${index + 1}`,
+          slug: item?.slug || "",
           name: item?.name || "สินค้าจากร้านเดียวกัน",
           price: Number.isFinite(item?.price) ? item.price : 0,
           originalPrice: Number.isFinite(item?.originalPrice) ? item.originalPrice : 0,
@@ -213,24 +238,70 @@ const normalizeProduct = (rawProduct = {}) => {
   };
 };
 
-const ProductMockPage = () => {
-  const product = useMemo(() => normalizeProduct(mockProduct), []);
+const ProductMockPage = ({
+  onNavigateToShop = null,
+  onNavigateToProduct = null,
+  currentPath = PRODUCT_ROUTE,
+}) => {
+  const routeMatch = useMemo(() => matchProductRoute(currentPath), [currentPath]);
+  const requestedProductSlug = routeMatch?.slug || "";
+  const requestedProduct = useMemo(
+    () => (requestedProductSlug ? getProductBySlug(requestedProductSlug) : null),
+    [requestedProductSlug]
+  );
+  const fallbackProduct = useMemo(() => getDefaultMockProduct() || {}, []);
+  const rawProduct = requestedProduct || fallbackProduct;
+  const baseProduct = useMemo(() => normalizeProduct(rawProduct), [rawProduct]);
+  const isMissingProduct = Boolean(requestedProductSlug) && !requestedProduct;
+  const isUnknownRoute = !routeMatch;
+  const routeNotice = useMemo(() => {
+    if (isMissingProduct) {
+      return {
+        title: "ไม่พบสินค้าที่ต้องการ",
+        message: `ไม่พบสินค้า slug "${requestedProductSlug}" กำลังแสดงสินค้าตัวอย่างแทน`,
+      };
+    }
+
+    if (isUnknownRoute) {
+      return {
+        title: "ไม่พบเส้นทางที่ร้องขอ",
+        message: "เส้นทางนี้ยังไม่รองรับใน mock SPA ปัจจุบัน กำลังแสดงสินค้าตัวอย่างแทน",
+      };
+    }
+
+    return null;
+  }, [isMissingProduct, isUnknownRoute, requestedProductSlug]);
   const initialEditableContent = useMemo(
     () => ({
-      productTitle: product.name || "สินค้าตัวอย่างสำหรับการนำเสนอ",
+      productTitle: baseProduct.name || "สินค้าตัวอย่างสำหรับการนำเสนอ",
       productGalleryOverrides: {},
       productVariantsOverrides: {},
-      shopName: product.shop.name || "ร้านค้าตัวอย่าง",
-      shopAvatarOverride: "",
-      productDescriptionHtml: "",
+      shopName: baseProduct.shop.name || "ร้านค้าตัวอย่าง",
+      shopAvatarOverride: baseProduct.shop.avatarSrc || "",
+      productDescriptionHtml: baseProduct.descriptionHtml || "",
       productSpecsOverrides: {},
     }),
-    [product.name, product.shop.name]
+    [baseProduct.descriptionHtml, baseProduct.name, baseProduct.shop.avatarSrc, baseProduct.shop.name]
+  );
+  const editableContentStorageKey = useMemo(
+    () => getEditableContentStorageKey(baseProduct),
+    [baseProduct.id, baseProduct.slug]
+  );
+  const legacyEditableContentStorageKeys = useMemo(
+    () => getLegacyEditableContentStorageKeys(baseProduct),
+    [baseProduct.id, baseProduct.slug]
   );
 
   const { editableContent, setField, restoreField, resetEditableContent } = useEditableContent(
     initialEditableContent,
-    `pm_editable_content_${product.id}`
+    editableContentStorageKey,
+    legacyEditableContentStorageKeys
+  );
+  // Shared display product shape for product page + storefront cards.
+  const displayProduct = useMemo(
+    () =>
+      normalizeProduct(buildDisplayProductFromEditableContent(rawProduct, editableContent)),
+    [editableContent, rawProduct]
   );
   const {
     isEditMode,
@@ -249,175 +320,36 @@ const ProductMockPage = () => {
   const [reviewFilter, setReviewFilter] = useState("all");
   const [toastState, setToastState] = useState({ show: false, message: "" });
 
-  const displayProductTitle = useMemo(() => {
-    const editableTitle =
-      typeof editableContent.productTitle === "string" ? editableContent.productTitle.trim() : "";
-    return editableTitle || product.name || "สินค้าตัวอย่างสำหรับการนำเสนอ";
-  }, [editableContent.productTitle, product.name]);
-
-  const displayShopName = useMemo(() => {
-    const editableShopName =
-      typeof editableContent.shopName === "string" ? editableContent.shopName.trim() : "";
-    return editableShopName || product.shop.name || "ร้านค้าตัวอย่าง";
-  }, [editableContent.shopName, product.shop.name]);
-
-  const displayShopAvatar = useMemo(() => {
-    const editableAvatar =
-      typeof editableContent.shopAvatarOverride === "string"
-        ? editableContent.shopAvatarOverride.trim()
-        : "";
-    return editableAvatar || "";
-  }, [editableContent.shopAvatarOverride]);
-
-  const displayDescriptionHtml = useMemo(() => {
-    return typeof editableContent.productDescriptionHtml === "string"
-      ? editableContent.productDescriptionHtml
-      : "";
-  }, [editableContent.productDescriptionHtml]);
-
-  const productVariantsOverrides = useMemo(() => {
-    const source = editableContent.productVariantsOverrides;
-    if (!source || typeof source !== "object" || Array.isArray(source)) {
-      return {
-        mode: "legacy-map",
-        overridesById: {},
-      };
-    }
-
-    if (source.mode === VARIANT_OVERRIDE_MODE_FULL_LIST && Array.isArray(source.rows)) {
-      const rows = source.rows
-        .map((row, index) => {
-          if (!row || typeof row !== "object" || Array.isArray(row)) {
-            return null;
-          }
-          const normalizedRow = toComparableVariantRow(row, index);
-          if (!normalizedRow.label) {
-            return null;
-          }
-          return normalizedRow;
-        })
-        .filter(Boolean);
-
-      if (rows.length) {
-        return {
-          mode: "full-list",
-          rows,
-        };
-      }
-
-      return {
-        mode: "legacy-map",
-        overridesById: {},
-      };
-    }
-
-    const sanitized = {};
-    Object.entries(source).forEach(([variantId, override]) => {
-      if (!override || typeof override !== "object" || Array.isArray(override)) {
-        return;
-      }
-
-      const nextOverride = {};
-      if (typeof override.label === "string" && override.label.trim()) {
-        nextOverride.label = override.label.trim();
-      }
-      if (Number.isFinite(override.price) && override.price >= 0) {
-        nextOverride.price = Math.round(override.price);
-      }
-      if (typeof override.active === "boolean") {
-        nextOverride.active = override.active;
-      }
-
-      if (Object.keys(nextOverride).length) {
-        sanitized[variantId] = nextOverride;
-      }
-    });
-    return {
-      mode: "legacy-map",
-      overridesById: sanitized,
-    };
-  }, [editableContent.productVariantsOverrides]);
-
-  const displayProductVariants = useMemo(() => {
-    if (productVariantsOverrides.mode === "full-list") {
-      return productVariantsOverrides.rows.map((row, index) => {
-        const normalizedRow = toComparableVariantRow(row, index);
-        return {
-          ...normalizedRow,
-          disabled: !normalizedRow.active,
-        };
-      });
-    }
-
-    return product.variants.map((variant) => {
-      const normalizedVariant = toComparableVariantRow(variant);
-      const override = productVariantsOverrides.overridesById[variant.id];
-      const active =
-        typeof override?.active === "boolean"
-          ? override.active
-          : normalizedVariant.active;
-      return {
-        ...normalizedVariant,
-        label: override?.label || normalizedVariant.label,
-        price: Number.isFinite(override?.price) ? override.price : normalizedVariant.price,
-        active,
-        disabled: !active,
-      };
-    });
-  }, [product.variants, productVariantsOverrides]);
-
   const defaultProductSpecsRows = useMemo(
-    () => [
-      {
-        id: "category",
-        label: "หมวดหมู่",
-        value: Array.isArray(product.categoryPath) ? product.categoryPath.join(" > ") : "-",
-      },
-      { id: "brand", label: "แบรนด์", value: product.specs.brand || "-" },
-      { id: "warranty", label: "การรับประกัน", value: product.specs.warranty || "-" },
-      { id: "shelfLife", label: "อายุสินค้า", value: product.specs.shelfLife || "-" },
-      {
-        id: "licenseNumber",
-        label: "เลขที่ใบอนุญาต/จดแจ้ง",
-        value: product.specs.licenseNumber || "-",
-      },
-      { id: "shipFrom", label: "จัดส่งจาก", value: product.specs.shipFrom || "-" },
-    ],
-    [product.categoryPath, product.specs.brand, product.specs.licenseNumber, product.specs.shelfLife, product.specs.shipFrom, product.specs.warranty]
+    () =>
+      Array.isArray(baseProduct.specRows) && baseProduct.specRows.length
+        ? baseProduct.specRows
+        : [
+            {
+              id: "category",
+              label: "หมวดหมู่",
+              value: Array.isArray(baseProduct.categoryPath) ? baseProduct.categoryPath.join(" > ") : "-",
+            },
+            { id: "brand", label: "แบรนด์", value: baseProduct.specs.brand || "-" },
+            { id: "warranty", label: "การรับประกัน", value: baseProduct.specs.warranty || "-" },
+            { id: "shelfLife", label: "อายุสินค้า", value: baseProduct.specs.shelfLife || "-" },
+            {
+              id: "licenseNumber",
+              label: "เลขที่ใบอนุญาต/จดแจ้ง",
+              value: baseProduct.specs.licenseNumber || "-",
+            },
+            { id: "shipFrom", label: "จัดส่งจาก", value: baseProduct.specs.shipFrom || "-" },
+          ],
+    [
+      baseProduct.categoryPath,
+      baseProduct.specRows,
+      baseProduct.specs.brand,
+      baseProduct.specs.licenseNumber,
+      baseProduct.specs.shelfLife,
+      baseProduct.specs.shipFrom,
+      baseProduct.specs.warranty,
+    ]
   );
-
-  const productSpecsOverrides = useMemo(() => {
-    const source = editableContent.productSpecsOverrides;
-    if (!source || typeof source !== "object" || Array.isArray(source)) {
-      return {};
-    }
-
-    const sanitized = {};
-    Object.entries(source).forEach(([rowId, overrideRow]) => {
-      if (!overrideRow || typeof overrideRow !== "object" || Array.isArray(overrideRow)) {
-        return;
-      }
-      const nextRow = {};
-      if (typeof overrideRow.label === "string" && overrideRow.label.trim()) {
-        nextRow.label = overrideRow.label.trim();
-      }
-      if (typeof overrideRow.value === "string" && overrideRow.value.trim()) {
-        nextRow.value = overrideRow.value.trim();
-      }
-      if (Object.keys(nextRow).length) {
-        sanitized[rowId] = nextRow;
-      }
-    });
-    return sanitized;
-  }, [editableContent.productSpecsOverrides]);
-
-  const displayProductSpecsRows = useMemo(() => {
-    return defaultProductSpecsRows.map((row) => ({
-      ...row,
-      label: productSpecsOverrides[row.id]?.label || row.label,
-      value: productSpecsOverrides[row.id]?.value || row.value,
-    }));
-  }, [defaultProductSpecsRows, productSpecsOverrides]);
 
   const galleryOverrides = useMemo(() => {
     const source = editableContent.productGalleryOverrides;
@@ -431,7 +363,7 @@ const ProductMockPage = () => {
       if (
         Number.isInteger(slotIndex) &&
         slotIndex >= 0 &&
-        slotIndex < product.images.length
+        slotIndex < baseProduct.images.length
       ) {
         if (imageSrc === null) {
           sanitized[slotIndex] = null;
@@ -443,44 +375,28 @@ const ProductMockPage = () => {
       }
     });
     return sanitized;
-  }, [editableContent.productGalleryOverrides, product.images.length]);
-
-  const displayProductImages = useMemo(() => {
-    return product.images.reduce((result, defaultImage, index) => {
-      const hasOverride = Object.prototype.hasOwnProperty.call(galleryOverrides, index);
-      if (!hasOverride) {
-        result.push(defaultImage);
-        return result;
-      }
-
-      const overrideValue = galleryOverrides[index];
-      if (typeof overrideValue === "string" && overrideValue.trim()) {
-        result.push(overrideValue);
-      }
-      return result;
-    }, []);
-  }, [galleryOverrides, product.images]);
+  }, [baseProduct.images.length, editableContent.productGalleryOverrides]);
 
   const selectedVariant = useMemo(() => {
-    return displayProductVariants.find((variant) => variant.id === selectedVariantId) || null;
-  }, [displayProductVariants, selectedVariantId]);
+    return displayProduct.variants.find((variant) => variant.id === selectedVariantId) || null;
+  }, [displayProduct.variants, selectedVariantId]);
 
   const filteredReviews = useMemo(() => {
     if (reviewFilter === "all") {
-      return product.reviews;
+      return displayProduct.reviews;
     }
     if (reviewFilter.startsWith("star-")) {
       const star = Number(reviewFilter.replace("star-", ""));
-      return product.reviews.filter((review) => review.rating === star);
+      return displayProduct.reviews.filter((review) => review.rating === star);
     }
     if (reviewFilter === "comment") {
-      return product.reviews.filter((review) => review.comment && review.comment.trim());
+      return displayProduct.reviews.filter((review) => review.comment && review.comment.trim());
     }
     if (reviewFilter === "media") {
-      return product.reviews.filter((review) => review.hasMedia);
+      return displayProduct.reviews.filter((review) => review.hasMedia);
     }
-    return product.reviews;
-  }, [product.reviews, reviewFilter]);
+    return displayProduct.reviews;
+  }, [displayProduct.reviews, reviewFilter]);
 
   useEffect(() => {
     if (!toastState.show) {
@@ -493,8 +409,8 @@ const ProductMockPage = () => {
   }, [toastState.show]);
 
   useEffect(() => {
-    setSelectedImage((prev) => Math.min(prev, Math.max(displayProductImages.length - 1, 0)));
-  }, [displayProductImages.length]);
+    setSelectedImage((prev) => Math.min(prev, Math.max(displayProduct.images.length - 1, 0)));
+  }, [displayProduct.images.length]);
 
   useEffect(() => {
     if (!isEditMode) {
@@ -506,15 +422,15 @@ const ProductMockPage = () => {
     if (!selectedVariantId) {
       return;
     }
-    const selected = displayProductVariants.find((variant) => variant.id === selectedVariantId);
+    const selected = displayProduct.variants.find((variant) => variant.id === selectedVariantId);
     if (!selected || selected.active === false) {
       setSelectedVariantId(null);
       setQuantity(1);
     }
-  }, [displayProductVariants, selectedVariantId]);
+  }, [displayProduct.variants, selectedVariantId]);
 
   const handleVariantChange = (variantId) => {
-    const targetVariant = displayProductVariants.find((variant) => variant.id === variantId);
+    const targetVariant = displayProduct.variants.find((variant) => variant.id === variantId);
     if (!targetVariant || targetVariant.active === false) {
       return;
     }
@@ -560,13 +476,42 @@ const ProductMockPage = () => {
     });
   };
 
+  const handleExportEditableContent = useCallback(() => {
+    const exportPayload = buildEditableContentExport({
+      productId: baseProduct.id,
+      productSlug: baseProduct.slug,
+      storageKey: editableContentStorageKey,
+      editableContent,
+    });
+    const exportDate = new Date().toISOString().slice(0, 10);
+    const productFileStem = baseProduct.slug || baseProduct.id;
+    const fileName = `pm-editable-content-${productFileStem}-${exportDate}.json`;
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = objectUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+
+    setToastState({
+      show: true,
+      message: `ส่งออกไฟล์แล้ว ใช้ npm run publish:product -- "<path>\\${fileName}"`,
+    });
+  }, [baseProduct.id, baseProduct.slug, editableContent, editableContentStorageKey]);
+
   const handleSaveProductVariants = useCallback(
     (nextRows) => {
       if (!Array.isArray(nextRows) || !nextRows.length) {
         return;
       }
 
-      const defaultVariantRows = product.variants.map((variant, index) =>
+      const defaultVariantRows = baseProduct.variants.map((variant, index) =>
         toComparableVariantRow(variant, index)
       );
       const defaultVariantMap = Object.fromEntries(
@@ -615,7 +560,7 @@ const ProductMockPage = () => {
         rows: normalizedRows,
       });
     },
-    [product.variants, restoreField, setField]
+    [baseProduct.variants, restoreField, setField]
   );
 
   const handleSaveShopHeader = useCallback(
@@ -623,7 +568,8 @@ const ProductMockPage = () => {
       const nextName = typeof nextHeader?.name === "string" ? nextHeader.name.trim() : "";
       const nextAvatarSrc =
         typeof nextHeader?.avatarSrc === "string" ? nextHeader.avatarSrc.trim() : "";
-      const defaultShopName = typeof product.shop.name === "string" ? product.shop.name.trim() : "";
+      const defaultShopName =
+        typeof baseProduct.shop.name === "string" ? baseProduct.shop.name.trim() : "";
 
       if (nextName && nextName !== defaultShopName) {
         setField("shopName", nextName);
@@ -637,7 +583,7 @@ const ProductMockPage = () => {
         restoreField("shopAvatarOverride");
       }
     },
-    [product.shop.name, restoreField, setField]
+    [baseProduct.shop.name, restoreField, setField]
   );
 
   const handleSaveProductSpecsRows = useCallback(
@@ -691,27 +637,33 @@ const ProductMockPage = () => {
       <div className="pm-content-shell">
         <div className="pm-container">
           <div className="pm-page-badge-row">
-            <span className="pm-demo-badge">{product.internalNotice.badge}</span>
+            <span className="pm-demo-badge">{displayProduct.internalNotice.badge}</span>
           </div>
-          <Breadcrumbs items={product.categoryPath} />
+          {routeNotice ? (
+            <section className="pm-section-card" aria-live="polite">
+              <h2 className="pm-section-title">{routeNotice.title}</h2>
+              <p className="pm-shop-status">{routeNotice.message}</p>
+            </section>
+          ) : null}
+          <Breadcrumbs items={displayProduct.categoryPath} />
 
           <section className="pm-main-section">
             <ProductGallery
-              images={displayProductImages}
+              images={displayProduct.images}
               selectedImage={selectedImage}
               onSelectImage={setSelectedImage}
-              productName={displayProductTitle}
+              productName={displayProduct.name}
               isEditMode={isEditMode}
               onOpenGalleryEditor={() => setIsGalleryEditorOpen(true)}
             />
             <ProductInfoPanel
-              productName={displayProductTitle}
+              productName={displayProduct.name}
               titleSlot={
                 <EditableRegion
                   regionId="product-title"
                   label="ชื่อสินค้า"
                   isEditMode={isEditMode}
-                  value={displayProductTitle}
+                  value={displayProduct.name}
                   editor="text"
                   editorPlacement="inline"
                   openOnRegionClick
@@ -719,19 +671,19 @@ const ProductMockPage = () => {
                   onSave={(nextTitle) => setField("productTitle", nextTitle)}
                   onRestoreDefault={() => restoreField("productTitle")}
                 >
-                  <h1 className="pm-product-title">{displayProductTitle}</h1>
+                  <h1 className="pm-product-title">{displayProduct.name}</h1>
                 </EditableRegion>
               }
-              soldCount={product.soldCount}
-              favoriteCount={product.favoriteCount}
-              totalRatings={product.ratingSummary.totalRatings}
-              averageRating={product.ratingSummary.score}
-              variants={displayProductVariants}
+              soldCount={displayProduct.soldCount}
+              favoriteCount={displayProduct.favoriteCount}
+              totalRatings={displayProduct.ratingSummary.totalRatings}
+              averageRating={displayProduct.ratingSummary.score}
+              variants={displayProduct.variants}
               selectedVariantId={selectedVariantId}
               selectedVariant={selectedVariant}
               isEditMode={isEditMode}
               quantity={quantity}
-              internalNote={product.internalNotice.ctaNote}
+              internalNote={displayProduct.internalNotice.ctaNote}
               onSaveVariantRows={handleSaveProductVariants}
               onRestoreDefaultVariantRows={() => restoreField("productVariantsOverrides")}
               onVariantChange={handleVariantChange}
@@ -744,24 +696,25 @@ const ProductMockPage = () => {
           </section>
 
           <ShopSummaryCard
-            shop={product.shop}
+            shop={baseProduct.shop}
             isEditMode={isEditMode}
-            shopName={displayShopName}
-            shopAvatarSrc={displayShopAvatar}
+            shopName={displayProduct.shop.name}
+            shopAvatarSrc={displayProduct.shop.avatarSrc}
+            onOpenShop={onNavigateToShop}
             onSaveShopHeader={handleSaveShopHeader}
           />
           <ProductSpecs
-            specs={product.specs}
-            categoryPath={product.categoryPath}
-            rows={displayProductSpecsRows}
+            specs={baseProduct.specs}
+            categoryPath={baseProduct.categoryPath}
+            rows={displayProduct.specRows}
             isEditMode={isEditMode}
             onSaveRows={handleSaveProductSpecsRows}
             onRestoreDefaultRows={() => restoreField("productSpecsOverrides")}
           />
           <ProductDescription
-            description={product.description}
+            description={displayProduct.description}
             isEditMode={isEditMode}
-            htmlContent={displayDescriptionHtml}
+            htmlContent={displayProduct.descriptionHtml}
             onSaveHtml={(nextHtml) => setField("productDescriptionHtml", nextHtml)}
             onRestoreDefault={() => restoreField("productDescriptionHtml")}
           />
@@ -769,20 +722,24 @@ const ProductMockPage = () => {
           <section className="pm-section-card pm-reviews-card">
             <h2 className="pm-section-title">คะแนนและรีวิวสินค้า</h2>
             <RatingSummary
-              summary={product.ratingSummary}
+              summary={displayProduct.ratingSummary}
               selectedFilter={reviewFilter}
               onFilterChange={setReviewFilter}
             />
             <ReviewList reviews={filteredReviews} />
           </section>
 
-          <SameShopCarousel items={product.sameShopItems} />
+          <SameShopCarousel
+            items={displayProduct.sameShopItems}
+            onNavigateToProduct={onNavigateToProduct}
+          />
         </div>
       </div>
       <AdminEditGate
         isEditMode={isEditMode}
         onOpenAuth={openPasswordModal}
         onExitEditMode={exitEditMode}
+        onExportEditableContent={handleExportEditableContent}
         onResetEditableContent={resetEditableContent}
       />
       <AdminPasswordModal
@@ -793,7 +750,7 @@ const ProductMockPage = () => {
       />
       <GalleryEditorModal
         open={isGalleryEditorOpen}
-        defaultImages={product.images}
+        defaultImages={baseProduct.images}
         overrides={galleryOverrides}
         onSave={(nextOverrides) => setField("productGalleryOverrides", nextOverrides)}
         onClose={() => setIsGalleryEditorOpen(false)}

@@ -4,6 +4,7 @@ const AdminEditGate = ({
   isEditMode = false,
   onOpenAuth = () => {},
   onExitEditMode = () => {},
+  onExportEditableContent,
   onResetEditableContent,
 }) => {
   return (
@@ -19,6 +20,15 @@ const AdminEditGate = ({
             โหมดแก้ไขเปิดอยู่
           </div>
           <div className="ae-gate-actions">
+            {onExportEditableContent ? (
+              <button
+                type="button"
+                className="ae-gate-btn ae-gate-btn-primary"
+                onClick={onExportEditableContent}
+              >
+                ส่งออกไฟล์ publish
+              </button>
+            ) : null}
             {onResetEditableContent ? (
               <button
                 type="button"

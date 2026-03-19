@@ -6,6 +6,7 @@ const ShopSummaryCard = ({
   isEditMode = false,
   shopName = "",
   shopAvatarSrc = "",
+  onOpenShop = null,
   onSaveShopHeader = () => {},
 }) => {
   const displayShopName =
@@ -28,6 +29,7 @@ const ShopSummaryCard = ({
         name={displayShopName}
         status={shop.onlineStatus}
         avatarSrc={shopAvatarSrc}
+        onNavigate={onOpenShop}
         onSave={onSaveShopHeader}
       />
 

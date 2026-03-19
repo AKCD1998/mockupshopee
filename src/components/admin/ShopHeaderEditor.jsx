@@ -22,6 +22,7 @@ const ShopHeaderEditor = ({
   name = "",
   status = "",
   avatarSrc = "",
+  onNavigate = null,
   onSave = () => {},
 }) => {
   const fileInputRef = useRef(null);
@@ -37,6 +38,7 @@ const ShopHeaderEditor = ({
   const safeAvatarSrc = normalizeText(avatarSrc);
   const avatarInitial = toInitial(safeDisplayName);
   const previewInitial = toInitial(draftName, avatarInitial);
+  const canNavigateToShop = !isEditMode && typeof onNavigate === "function";
 
   const handleOpenEditor = () => {
     setDraftName(safeDisplayName);
@@ -122,7 +124,7 @@ const ShopHeaderEditor = ({
     setIsEditorOpen(false);
   };
 
-  const headerContent = (
+  const headerBody = (
     <div className="pm-shop-header">
       <div className={`pm-shop-avatar ${safeAvatarSrc ? "has-image" : ""}`}>
         {safeAvatarSrc ? (
@@ -140,6 +142,19 @@ const ShopHeaderEditor = ({
         <p className="pm-shop-status">{status}</p>
       </div>
     </div>
+  );
+
+  const headerContent = canNavigateToShop ? (
+    <button
+      type="button"
+      className="pm-shop-header-button"
+      onClick={onNavigate}
+      aria-label={`เปิดหน้าร้าน ${safeDisplayName}`}
+    >
+      {headerBody}
+    </button>
+  ) : (
+    headerBody
   );
 
   if (!isEditMode) {

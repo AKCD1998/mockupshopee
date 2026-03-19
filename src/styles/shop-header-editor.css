@@ -25,6 +25,30 @@
   line-height: 1;
 }
 
+.pm-shop-header-button {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pm-shop-header-button .pm-shop-header {
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.pm-shop-header-button:hover .pm-shop-header {
+  transform: translateY(-1px);
+  opacity: 0.96;
+}
+
+.pm-shop-header-button:focus-visible {
+  outline: 2px solid rgba(238, 77, 45, 0.35);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
 .ae-shop-header-region {
   border-radius: 12px;
 }

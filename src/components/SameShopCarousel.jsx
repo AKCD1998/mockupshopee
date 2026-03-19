@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { getProductRoute } from "../utils/appRoutes";
 
 const priceFormatter = new Intl.NumberFormat("th-TH", {
   style: "currency",
@@ -6,7 +7,7 @@ const priceFormatter = new Intl.NumberFormat("th-TH", {
   maximumFractionDigits: 0,
 });
 
-const SameShopCarousel = ({ items = [] }) => {
+const SameShopCarousel = ({ items = [], onNavigateToProduct = null }) => {
   const trackRef = useRef(null);
 
   const handleScroll = (direction) => {
@@ -15,6 +16,23 @@ const SameShopCarousel = ({ items = [] }) => {
     }
     const amount = direction === "left" ? -340 : 340;
     trackRef.current.scrollBy({ left: amount, behavior: "smooth" });
+  };
+
+  const handleNavigate = (event, slug) => {
+    if (
+      typeof onNavigateToProduct !== "function" ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigateToProduct(slug);
   };
 
   return (
@@ -45,9 +63,16 @@ const SameShopCarousel = ({ items = [] }) => {
         {items.map((item) => (
           <article className="pm-carousel-item" key={item.id}>
             <a
-              href="#"
+              href={item.slug ? getProductRoute(item.slug) : "#"}
               className="pm-carousel-link"
-              onClick={(event) => event.preventDefault()}
+              onClick={(event) => {
+                if (!item.slug) {
+                  event.preventDefault();
+                  return;
+                }
+
+                handleNavigate(event, item.slug);
+              }}
             >
               <div className="pm-carousel-image-wrap">
                 <img src={item.image} alt={item.name} className="pm-carousel-image" />
