@@ -1,4 +1,36 @@
+import { SHOP_PROMO_PRODUCT_IMAGES } from "./shopPromoAssets";
+
 const ASSET_BASE = "/generated-assets/dr-morepen-glucoone-bg03";
+
+const BG03_GALLERY_IMAGES = [
+  SHOP_PROMO_PRODUCT_IMAGES.meterOnly,
+  SHOP_PROMO_PRODUCT_IMAGES.meterStrip25,
+  SHOP_PROMO_PRODUCT_IMAGES.meterStrip50,
+];
+
+const BG03_STRIP_KIT_IMAGES = [
+  SHOP_PROMO_PRODUCT_IMAGES.meterStrip25,
+  SHOP_PROMO_PRODUCT_IMAGES.meterStrip50,
+  SHOP_PROMO_PRODUCT_IMAGES.meterOnly,
+];
+
+const BG03_TEST_STRIP_50_IMAGES = [
+  SHOP_PROMO_PRODUCT_IMAGES.testStrips50,
+  SHOP_PROMO_PRODUCT_IMAGES.testStrips50,
+  SHOP_PROMO_PRODUCT_IMAGES.testStrips50,
+];
+
+const STETHOSCOPE_PROMO_IMAGES = [
+  SHOP_PROMO_PRODUCT_IMAGES.stethoscope,
+  SHOP_PROMO_PRODUCT_IMAGES.stethoscope,
+  SHOP_PROMO_PRODUCT_IMAGES.stethoscope,
+];
+
+const SAFE_AQ_PROMO_IMAGES = [
+  SHOP_PROMO_PRODUCT_IMAGES.meterStrip50,
+  SHOP_PROMO_PRODUCT_IMAGES.meterStrip50,
+  SHOP_PROMO_PRODUCT_IMAGES.testStrips25,
+];
 
 const DEFAULT_INTERNAL_NOTICE = {
   badge: "Mockup สำหรับพิจารณาภายใน",
@@ -103,11 +135,7 @@ const mockProductsBase = [
         sku: "BG03-STR50",
       },
     ],
-    images: [
-      `${ASSET_BASE}/gallery-1.jpg`,
-      `${ASSET_BASE}/gallery-2.jpg`,
-      `${ASSET_BASE}/gallery-3.jpg`,
-    ],
+    images: [...BG03_GALLERY_IMAGES],
     shop: {
       ...DEFAULT_SHOP,
     },
@@ -226,11 +254,7 @@ const mockProductsBase = [
         sku: "STETH-NVY",
       },
     ],
-    images: [
-      `${ASSET_BASE}/store-overview-feature-8.jpg`,
-      `${ASSET_BASE}/store-overview-feature-8.jpg`,
-      `${ASSET_BASE}/store-overview-feature-8.jpg`,
-    ],
+    images: [...STETHOSCOPE_PROMO_IMAGES],
     shop: {
       ...DEFAULT_SHOP,
     },
@@ -330,11 +354,7 @@ const mockProductsBase = [
         sku: "BG03-TS50",
       },
     ],
-    images: [
-      `${ASSET_BASE}/dr-morepen-glucoone-test-strips-50.jpg`,
-      `${ASSET_BASE}/dr-morepen-glucoone-test-strips-50.jpg`,
-      `${ASSET_BASE}/dr-morepen-glucoone-test-strips-50.jpg`,
-    ],
+    images: [...BG03_TEST_STRIP_50_IMAGES],
     shop: {
       ...DEFAULT_SHOP,
     },
@@ -429,11 +449,7 @@ const mockProductsBase = [
         sku: "BG03-MTR",
       },
     ],
-    images: [
-      `${ASSET_BASE}/gallery-1.jpg`,
-      `${ASSET_BASE}/gallery-2.jpg`,
-      `${ASSET_BASE}/gallery-3.jpg`,
-    ],
+    images: [...BG03_GALLERY_IMAGES],
     shop: {
       ...DEFAULT_SHOP,
     },
@@ -546,11 +562,7 @@ const mockProductsBase = [
         sku: "BG03-STR50",
       },
     ],
-    images: [
-      `${ASSET_BASE}/gallery-2.jpg`,
-      `${ASSET_BASE}/gallery-3.jpg`,
-      `${ASSET_BASE}/gallery-1.jpg`,
-    ],
+    images: [...BG03_STRIP_KIT_IMAGES],
     shop: {
       ...DEFAULT_SHOP,
     },
@@ -669,11 +681,7 @@ const mockProductsBase = [
         sku: "AQ-100",
       },
     ],
-    images: [
-      `${ASSET_BASE}/store-top-sales-product-2.jpg`,
-      `${ASSET_BASE}/store-top-sales-product-2.jpg`,
-      `${ASSET_BASE}/store-top-sales-product-3.jpg`,
-    ],
+    images: [...SAFE_AQ_PROMO_IMAGES],
     shop: {
       ...DEFAULT_SHOP,
     },
@@ -772,11 +780,7 @@ const mockProductsBase = [
         sku: "LANCET-200",
       },
     ],
-    images: [
-      `${ASSET_BASE}/store-top-sales-product-5.jpg`,
-      `${ASSET_BASE}/store-top-sales-product-5.jpg`,
-      `${ASSET_BASE}/store-overview-feature-8.jpg`,
-    ],
+    images: [...STETHOSCOPE_PROMO_IMAGES],
     shop: {
       ...DEFAULT_SHOP,
     },

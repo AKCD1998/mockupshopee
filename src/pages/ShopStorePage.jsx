@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ChubbyTopHeader from "../components/header/ChubbyTopHeader";
 import mockProduct, { getAllMockProducts } from "../data/mockProduct";
+import { SHOP_PROMO_BANNER_IMAGES, SHOP_PROMO_PRODUCT_IMAGES } from "../data/shopPromoAssets";
 import { getStoredDisplayProducts } from "../utils/displayProduct";
 import { EDITABLE_CONTENT_CHANGED_EVENT } from "../utils/editableContentStorage";
 import { PRODUCT_ROUTE, getProductRoute } from "../utils/appRoutes";
@@ -465,44 +466,38 @@ const STORE_LISTING_SORT_ITEMS = [
 ];
 
 const STORE_LISTING_PAGES = ["1", "2", "3"];
-const STORE_BANNER_IMAGE_SRC =
-  "/generated-assets/dr-morepen-glucoone-bg03/store-banner-line-album-260319-1.jpg";
+const STORE_BANNER_IMAGE_SRC = SHOP_PROMO_BANNER_IMAGES.storefrontHero;
 const STORE_BG03_GALLERY_IMAGE_SRCS = {
-  meterOnly: "/generated-assets/dr-morepen-glucoone-bg03/gallery-1.jpg",
-  meterStripBundle: "/generated-assets/dr-morepen-glucoone-bg03/gallery-2.jpg",
+  meterOnly: SHOP_PROMO_PRODUCT_IMAGES.meterOnly,
+  meterStripBundle: SHOP_PROMO_PRODUCT_IMAGES.meterStrip25,
 };
 const STORE_FEATURE_BANNER_GRID_IMAGES = [
   {
     id: "top-left",
-    src: "/generated-assets/dr-morepen-glucoone-bg03/store-feature-banner-grid-2.jpg",
+    src: SHOP_PROMO_BANNER_IMAGES.featureGridTopLeft,
     alt: "ภาพแบนเนอร์รายละเอียดร้านตำแหน่งซ้ายบน",
   },
   {
     id: "top-right",
-    src: "/generated-assets/dr-morepen-glucoone-bg03/store-feature-banner-grid-3.jpg",
+    src: SHOP_PROMO_BANNER_IMAGES.featureGridTopRight,
     alt: "ภาพแบนเนอร์รายละเอียดร้านตำแหน่งขวาบน",
   },
   {
     id: "bottom-left",
-    src: "/generated-assets/dr-morepen-glucoone-bg03/store-feature-banner-grid-4.jpg",
+    src: SHOP_PROMO_BANNER_IMAGES.featureGridBottomLeft,
     alt: "ภาพแบนเนอร์รายละเอียดร้านตำแหน่งซ้ายล่าง",
   },
   {
     id: "bottom-right",
-    src: "/generated-assets/dr-morepen-glucoone-bg03/store-feature-banner-grid-5.jpg",
+    src: SHOP_PROMO_BANNER_IMAGES.featureGridBottomRight,
     alt: "ภาพแบนเนอร์รายละเอียดร้านตำแหน่งขวาล่าง",
   },
 ];
-const STORE_TOP_SALES_BANNER_SRC =
-  "/generated-assets/dr-morepen-glucoone-bg03/store-top-sales-banner-6.jpg";
-const STORE_VERTICAL_BANNER_SRC =
-  "/generated-assets/dr-morepen-glucoone-bg03/store-vertical-banner-8.jpg";
-const STORE_OVERVIEW_BANNER_SRC =
-  "/generated-assets/dr-morepen-glucoone-bg03/store-vertical-banner-9.jpg";
-const STORE_OVERVIEW_INSERT_BANNER_SRC =
-  "/generated-assets/dr-morepen-glucoone-bg03/store-vertical-banner-7.jpg";
-const STORE_SECONDARY_OVERVIEW_FEATURED_IMAGE_SRC =
-  "/generated-assets/dr-morepen-glucoone-bg03/store-overview-feature-8.jpg";
+const STORE_TOP_SALES_BANNER_SRC = SHOP_PROMO_BANNER_IMAGES.topSales;
+const STORE_VERTICAL_BANNER_SRC = SHOP_PROMO_BANNER_IMAGES.vertical;
+const STORE_OVERVIEW_BANNER_SRC = SHOP_PROMO_BANNER_IMAGES.overview;
+const STORE_OVERVIEW_INSERT_BANNER_SRC = SHOP_PROMO_BANNER_IMAGES.overviewInsert;
+const STORE_SECONDARY_OVERVIEW_FEATURED_IMAGE_SRC = SHOP_PROMO_PRODUCT_IMAGES.stethoscope;
 const EXCLUDED_STOREFRONT_PRODUCT_SLUGS = [
   "dr-morepen-blood-pressure-monitor-bp12",
   "sinocare-safe-aq-test-strips-50",
@@ -536,7 +531,7 @@ const STORE_TOP_SALES_CARD_CONFIGS = [
     productSlug: "dr-morepen-glucoone-bg03",
     preferredVariantId: "meter-strip-50",
     nameOverride: "DR.MOREPEN GLUCOONE BG-03 เครื่องวัดน้ำตาล + ตัวเลือกแถบตรวจ",
-    imageOverride: "/generated-assets/dr-morepen-glucoone-bg03/gallery-3.jpg",
+    imageOverride: SHOP_PROMO_PRODUCT_IMAGES.meterStrip50,
     badge: "หลายตัวเลือก",
     voucherLabel: "เลือกชุดที่ต้องการได้",
   },
