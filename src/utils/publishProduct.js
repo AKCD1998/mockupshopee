@@ -1,3 +1,5 @@
+import { normalizeStoredAssetSrc } from "./publicAsset";
+
 export const VARIANT_OVERRIDE_MODE_FULL_LIST = "full-list-v1";
 
 const trimString = (value) => (typeof value === "string" ? value.trim() : "");
@@ -50,7 +52,9 @@ const buildDefaultSpecRows = (product = {}) => {
 };
 
 const applyGalleryOverrides = (defaultImages = [], overrides = {}) => {
-  const safeImages = Array.isArray(defaultImages) ? defaultImages.filter(Boolean) : [];
+  const safeImages = Array.isArray(defaultImages)
+    ? defaultImages.map((image) => normalizeStoredAssetSrc(image)).filter(Boolean)
+    : [];
   if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) {
     return safeImages;
   }
@@ -64,7 +68,7 @@ const applyGalleryOverrides = (defaultImages = [], overrides = {}) => {
 
     const overrideValue = overrides[index];
     if (typeof overrideValue === "string" && overrideValue.trim()) {
-      result.push(overrideValue.trim());
+      result.push(normalizeStoredAssetSrc(overrideValue));
     }
     return result;
   }, []);
@@ -161,9 +165,9 @@ export const buildPublishedProduct = (baseProduct = {}, editableContent = {}) =>
 
   const nextAvatarSrc = trimString(editableContent.shopAvatarOverride);
   if (nextAvatarSrc) {
-    nextProduct.shop.avatarSrc = nextAvatarSrc;
+    nextProduct.shop.avatarSrc = normalizeStoredAssetSrc(nextAvatarSrc);
   } else if (trimString(baseProduct.shop?.avatarSrc)) {
-    nextProduct.shop.avatarSrc = trimString(baseProduct.shop.avatarSrc);
+    nextProduct.shop.avatarSrc = normalizeStoredAssetSrc(baseProduct.shop.avatarSrc);
   } else {
     delete nextProduct.shop.avatarSrc;
   }

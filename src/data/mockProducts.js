@@ -1,6 +1,7 @@
 import { SHOP_PROMO_PRODUCT_IMAGES } from "./shopPromoAssets";
+import { getPublicAssetSrc } from "../utils/publicAsset";
 
-const ASSET_BASE = "/generated-assets/dr-morepen-glucoone-bg03";
+const ASSET_BASE = getPublicAssetSrc("generated-assets/dr-morepen-glucoone-bg03");
 
 const BG03_GALLERY_IMAGES = [
   SHOP_PROMO_PRODUCT_IMAGES.meterOnly,

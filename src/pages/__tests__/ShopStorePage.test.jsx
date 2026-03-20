@@ -129,4 +129,33 @@ describe("ShopStorePage", () => {
     expect(topSalesHrefs).toContain(getProductRoute("dr-morepen-glucoone-bg03"));
     expect(topSalesHrefs).toContain(getProductRoute("dr-morepen-glucoone-bg03-meter-only"));
   });
+
+  it("normalizes legacy relative generated-assets overrides from storage", () => {
+    const targetProduct = getAllMockProducts().find(
+      (product) => product.slug === "dr-morepen-professionals-deluxe-stethoscope"
+    );
+
+    expect(targetProduct).toBeDefined();
+
+    seedEditableContent(targetProduct, {
+      productGalleryOverrides: {
+        0: "./generated-assets/dr-morepen-glucoone-bg03/store-overview-feature-8.jpg",
+      },
+    });
+
+    renderShopStorePage();
+
+    const topSalesSection = screen.getByLabelText("สินค้าขายดีของร้าน");
+    const stethoscopeCard = within(topSalesSection).getByRole("link", {
+      name: /หูฟังทางการแพทย์ Dr\. Morepen Professionals Deluxe Stethoscope/i,
+    });
+    const stethoscopeImage = within(stethoscopeCard).getByRole("img", {
+      name: /หูฟังทางการแพทย์ Dr\. Morepen Professionals Deluxe Stethoscope/i,
+    });
+
+    expect(stethoscopeImage).toHaveAttribute(
+      "src",
+      "/generated-assets/dr-morepen-glucoone-bg03/store-overview-feature-8.jpg"
+    );
+  });
 });

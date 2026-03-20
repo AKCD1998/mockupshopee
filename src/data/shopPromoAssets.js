@@ -1,8 +1,6 @@
-const SHOP_PROMO_ASSET_BASE = "/mockupshopeeImages";
+import { getPublicAssetSrc } from "../utils/publicAsset";
 
-// Keep public URLs browser-safe while serving files from Thai-named folders.
-const getShopPromoAssetSrc = (relativePath) =>
-  `${SHOP_PROMO_ASSET_BASE}/${encodeURI(relativePath).replace(/%5C/g, "/")}`;
+const getShopPromoAssetSrc = (relativePath) => getPublicAssetSrc(`mockupshopeeImages/${relativePath}`);
 
 export const SHOP_PROMO_BANNER_IMAGES = {
   storefrontHero: getShopPromoAssetSrc("banner/LINE_ALBUM_Banner_260319_1.jpg"),
