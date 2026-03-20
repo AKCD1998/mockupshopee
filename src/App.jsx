@@ -1,31 +1,40 @@
 import React, { useCallback, useEffect, useState } from "react";
 import ProductMockPage from "./pages/ProductMockPage";
 import ShopStorePage from "./pages/ShopStorePage";
-import { PRODUCT_ROUTE, SHOP_ROUTE, getProductRoute, matchProductRoute } from "./utils/appRoutes";
+import {
+  PRODUCT_ROUTE,
+  SHOP_ROUTE,
+  getProductRoute,
+  matchProductRoute,
+  normalizeRoute,
+  readCurrentRoute,
+} from "./utils/appRoutes";
 
-const readCurrentPath = () => window.location.pathname || PRODUCT_ROUTE;
+const readCurrentPath = () => readCurrentRoute();
 
 function App() {
   const [currentPath, setCurrentPath] = useState(() => readCurrentPath());
 
   useEffect(() => {
-    const handlePopState = () => {
+    const handleHashChange = () => {
       setCurrentPath(readCurrentPath());
     };
 
-    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("hashchange", handleHashChange);
     return () => {
-      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("hashchange", handleHashChange);
     };
   }, []);
 
   const navigate = useCallback((nextPath) => {
-    if (!nextPath || nextPath === readCurrentPath()) {
+    const normalizedNextPath = normalizeRoute(nextPath);
+
+    if (!normalizedNextPath || normalizedNextPath === readCurrentPath()) {
       return;
     }
 
-    window.history.pushState({}, "", nextPath);
-    setCurrentPath(nextPath);
+    window.location.hash = normalizedNextPath.slice(1);
+    setCurrentPath(normalizedNextPath);
     window.scrollTo({ top: 0, left: 0 });
   }, []);
 

@@ -14,8 +14,8 @@ describe("ShopStorePage", () => {
     expect(recommendCardLinks.length).toBeGreaterThan(0);
     recommendCardLinks.forEach((link) => {
       expect(link).toHaveAttribute("href");
-      expect(link.getAttribute("href")).toMatch(/^\/product\//);
-      expect(link).not.toHaveAttribute("href", "/");
+      expect(link.getAttribute("href")).toMatch(/^#\/product\//);
+      expect(link).not.toHaveAttribute("href", "#/");
     });
   });
 
